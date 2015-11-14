@@ -185,9 +185,9 @@ void eval(char *cmdline)
   
   bg=parseline(cmdline, argv);
   
-  if(!builin_cmd(argv)){
+  if(!builtin_cmd(argv)){
     
-    sigprocmask(SIG_BLOCK, &mask, 0)
+    sigprocmask(SIG_BLOCK, &mask, 0);
     
     /* Fork */
     if((pid=fork())<0){
@@ -304,7 +304,7 @@ int builtin_cmd(char **argv)
     return 1;
   }
   
-  else if (!strcmmp(argv[0], "&")) {
+  else if (!strcmp(argv[0], "&")) {
     return 1;
   }
   
@@ -319,7 +319,7 @@ void do_bgfg(char **argv)
   char *id= argv[1];
   int jid;
   int pid;
-  struct job_t dojob;
+  struct job_t *dojob;
   
   /* Worng input */
   if(id==NULL){
@@ -328,7 +328,7 @@ void do_bgfg(char **argv)
   }
   
   /* When input is JID */
-  else if (id[0]= '%'){
+  else if (id[0]== '%'){
     jid=atoi(&id[1]);
     dojob=getjobjid(jobs,jid);
     if(dojob==NULL){
@@ -342,7 +342,7 @@ void do_bgfg(char **argv)
     pid =atoi(&id[0]);
     dojob=getjobpid(jobs,pid);
     if(dojob==NULL){
-      printf("Wrong PID: no job with pid %d\n,pid");
+      printf("Wrong PID: no job with pid %d\n",pid);
       return;
     }
   }
@@ -360,7 +360,7 @@ void do_bgfg(char **argv)
     }
     if(dojob->state==ST) kill(-pid,SIGCONT);
     dojob->state=FG;
-    waitfg(job->pid);
+    waitfg(dojob->pid);
   }
   
   if(!strcmp(argv[0], "bg")){
