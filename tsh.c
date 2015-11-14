@@ -203,7 +203,7 @@ void eval(char *cmdline)
       if (execvp(argv[0], argv) < 0) {
 		    printf("%s: Command not found. \n", argv[0]);
 		    exit(0);
-	    }
+	}
     }
     
     /* Parent process */
@@ -211,6 +211,7 @@ void eval(char *cmdline)
       if(bg==1){
         addjob(jobs, pid, BG, cmdline);
         sigprocmask(SIG_UNBLOCK, &mask, 0);
+        printf("[&d] (%d) %s\n", pid2jid(pid), pid, cmdline);
       }
       else{
         addjob(jobs, pid, FG, cmdline);
