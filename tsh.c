@@ -175,12 +175,19 @@ int main(int argc, char **argv)
  */
 void eval(char *cmdline)
 {
+  char *argv[MAXARGS];
   int bg;
   pid_t pid;
+  sigset_t mask;
+  
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGCHLD);
   
   bg=parseline(cmdline, argv);
   
   if(!builin_cmd(argv)){
+    
+    sigprocmask(SIG_BLOCK, &mask, 0)
     
     /* Fork */
     if((pid=fork())<0){
@@ -203,9 +210,11 @@ void eval(char *cmdline)
     else{
       if(bg==1){
         addjob(jobs, pid, BG, cmdline);
+        sigprocmask(SIG_UNBLOCK, &mask, 0);
       }
       else{
         addjob(jobs, pid, FG, cmdline);
+       	sigprocmask(SIG_UNBLOCK, &mask, 0);
         waitfg(pid);
       }
     }
