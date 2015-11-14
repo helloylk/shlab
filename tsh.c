@@ -211,7 +211,7 @@ void eval(char *cmdline)
       if(bg==1){
         addjob(jobs, pid, BG, cmdline);
         sigprocmask(SIG_UNBLOCK, &mask, 0);
-        printf("[&d] (%d) %s\n", pid2jid(pid), pid, cmdline);
+        printf("[&d] (%d) %s", pid2jid(pid), pid, cmdline);
       }
       else{
         addjob(jobs, pid, FG, cmdline);
@@ -324,7 +324,7 @@ void do_bgfg(char **argv)
   
   /* Worng input */
   if(id==NULL){
-    printf("Enter PID or JID\n");
+    printf("command needs\n");
     return ;
   }
   
@@ -333,7 +333,7 @@ void do_bgfg(char **argv)
     jid=atoi(&id[1]);
     dojob=getjobjid(jobs,jid);
     if(dojob==NULL){
-      printf("Wrong JID: no job with jid %d\n",jid);
+      printf("(%d): No such job\n",jid);
       return;
     }
   }
@@ -343,14 +343,14 @@ void do_bgfg(char **argv)
     pid =atoi(&id[0]);
     dojob=getjobpid(jobs,pid);
     if(dojob==NULL){
-      printf("Wrong PID: no job with pid %d\n",pid);
+      printf("(%d): No such process\n",pid);
       return;
     }
   }
   
   /* Wrong input2 */
   else{
-    printf("Enter PID or JID\n");
+    printf("argument must be a PID or %jobid\n");
     return;
   }
   
