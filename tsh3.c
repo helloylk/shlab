@@ -471,7 +471,8 @@ void sigint_handler(int sig)
 {
     pid_t pid = fgpid(jobs);
     
-    if (fgpid(jobs) != 0) {
+    /* If there is foreground job, then send the signal */
+    if (fgpid(jobs) != NULL) {
 	kill(-pid, SIGINT); 
     }
     
@@ -487,7 +488,8 @@ void sigtstp_handler(int sig)
 {
     pid_t pid = fgpid(jobs);
     
-    if (fgpid(jobs) != 0) {
+    /* If there is foreground job, then send the signal */
+    if (fgpid(jobs) != NULL) {
 	kill(-pid, SIGTSTP);
     }
     
