@@ -324,7 +324,7 @@ void do_bgfg(char **argv)
   
   /* Worng input */
   if(id==NULL){
-    printf("command needs\n");
+    printf("%s command requires PID or %%jobid argument\n", argv[0]);
     return ;
   }
   
@@ -350,7 +350,7 @@ void do_bgfg(char **argv)
   
   /* Wrong input2 */
   else{
-    printf("argument must be a PID or %jobid\n");
+    printf("argument must be a PID or %%jobid\n");
     return;
   }
   
@@ -359,6 +359,7 @@ void do_bgfg(char **argv)
       printf("Wrong command: The job is already in foreground\n");
       return ;
     }
+    pid=dojob->pid;
     if(dojob->state==ST) kill(-pid,SIGCONT);
     dojob->state=FG;
     waitfg(dojob->pid);
@@ -369,6 +370,7 @@ void do_bgfg(char **argv)
       printf("Wrong command: The job is already in background\n");
       return;
     }
+    printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
     dojob->state=BG;
     kill(-pid,SIGCONT);
   }
@@ -400,32 +402,28 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig)
 {
-  int status;
-    pid_t pid;
-  
-    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0 ) {
+	int status;  
+	pid_t pid;  
+    
+	// Waiting for/ handling all of the child processes according to their status
+	while ((pid = waitpid(fgpid(jobs), &status, WNOHANG|WUNTRACED)) > 0) {  
+		if (WIFSTOPPED(status)){  
+			sigtstp_handler(20);  
+		}  
+		else if (WIFSIGNALED(status)){  
+			sigint_handler(-2);  
+		}  
+		else if (WIFEXITED(status)){  
+			deletejob(jobs, pid);  
+		}  
+	}  
 	
-	if (WIFEXITED(status)) {   /*checks if child terminated normally */
-	    deletejob(jobs, pid);
-	}
-
-	if (WIFSIGNALED(status)) {  /*checks if child was terminated by a signal that was not caught */
-	    printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
-	    deletejob(jobs,pid);
-	}
-
-	if (WIFSTOPPED(status)) {     /*checks if child process that caused return is currently stopped */
-	    getjobpid(jobs, pid)->state = ST;
-	    printf("[%d] Stopped %s\n", pid2jid(pid), jobs->cmdline);
-	}
-    }
-    
-    if (pid < 0 && errno != ECHILD) {
-	printf("waitpid error: %s\n", strerror(errno));
-    }
-    
-    return;
-}
+	if (errno != ECHILD) {  
+		unix_error("waitpid error");   
+	}  
+	
+	return; 
+}}
 
 /*
  * sigint_handler - The kernel sends a SIGINT to the shell whenver the
