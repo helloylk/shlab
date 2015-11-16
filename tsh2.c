@@ -193,53 +193,53 @@ int main(int argc, char **argv)
  * when we type ctrl-c (ctrl-z) at the keyboard. Only the foreground process
  * group should receive those signals.
 */
-void eval(char *cmdline) 
+void eval(char *cmdline)
 {
     char *argv[MAXARGS];
     int bg;
     pid_t pid;
     sigset_t mask;
     
+    /* Declare and initialize a signal set */
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
     
     bg = parseline(cmdline, argv);
-
-    if (!builtin_cmd(argv)) {		 
-	
-	sigprocmask(SIG_BLOCK, &mask, 0);
-	
-	/* Fork */
-	if ((pid = fork()) < 0) {	
-	    printf("fork(): forking error\n");
-	    return;
-    }
-    
-    /* Child process */
-    else if(pid==0){
-      
-      if(setpgid(0,0)<0) unix_error("setpgid error");
         
-      if (execvp(argv[0], argv) < 0) {
-		    printf("%s: Command not found. \n", argv[0]);
-		    exit(0);
+    if (!builtin_cmd(argv)) { 
+    
+    	sigprocmask(SIG_BLOCK, &mask, 0);
+    
+    	/* Fork to get child */
+	 if ((pid = fork()) < 0) { 
+    		unix_error("fork error");
+    		return;
+	 }
+    
+    	/* Child process */
+	if (pid == 0) {
+		if(setpgid(0,0)<0) unix_error("setpgid error"); /* Change child process group id */
+    
+		if(execvp(argv[0],argv)<0){
+			printf("%s: Command not found. \n", argv[0]);
+    			exit(0);
+    		}
 	}
-     }
+	
+	/* Parent process */
+    	else {
 
-    /* Parent process */	    
-    else{
-      if(bg==1){
-        addjob(jobs, pid, BG, cmdline);
-        printf("[&d] (%d) %s", pid2jid(pid), pid, cmdline);
-      }
-      else{
-        addjob(jobs, pid, FG, cmdline);
-       	sigprocmask(SIG_UNBLOCK, &mask, 0);
-        waitfg(pid);
-      }
+    		if (bg == 1) {
+			addjob(jobs, pid, BG, cmdline); /* If bg, add job to job list as bg */
+			printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+		} 
+    		else {
+    			addjob(jobs, pid, FG, cmdline); /* If !bg, add job to job list as fg */
+    			sigprocmask(SIG_UNBLOCK, &mask, 0); /* Parent unblocks SIGCHLD */
+			 waitfg(pid);
+    		}
+    	}
     }
-  }
-  
     return;
 }
 
