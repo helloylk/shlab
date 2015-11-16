@@ -196,52 +196,50 @@ int main(int argc, char **argv)
 void eval(char *cmdline) 
 {
     char *argv[MAXARGS];
-    char buf[MAXLINE];
     int bg;
     pid_t pid;
     sigset_t mask;
     
-    /* Declare and initialize a signal set */
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
     
-    strcpy(buf, cmdline);
-    bg = parseline(buf, argv);
-    
-    if (argv[0] == NULL)
-	return;   /* Ignore empty lines */
-    
-    if (!builtin_cmd(argv)) {		 /* If user input is not a built in command, fork() */
+    bg = parseline(cmdline, argv);
+
+    if (!builtin_cmd(argv)) {		 
 	
-	/* Parent blocks SIGCHLD signal temporarily */
 	sigprocmask(SIG_BLOCK, &mask, 0);
 	
-	if ((pid = fork()) < 0) {	/* Child runs user job */
+	/* Fork */
+	if ((pid = fork()) < 0) {	
 	    printf("fork(): forking error\n");
 	    return;
-	}
-	
-	if (pid == 0) {
-	    setpgid(0,0);				/* Change child process group id */
-	    
-	    if (execvp(argv[0], argv) < 0) {
-		printf("%s: Command not found. \n", argv[0]);
-		exit(0);
-	    }
-	    
-	} else {
-	    /* Parent waits for foreground job to terminate */
-	    if (bg == 1) {
-		addjob(jobs, pid, BG, cmdline);		/* If bg, add job to job list as bg */
-		printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
-	    } else {
-		addjob(jobs, pid, FG, cmdline);		/* If !bg, add job to job list as fg */
-	    }
-		
-	    sigprocmask(SIG_UNBLOCK, &mask, 0);		/* Parent unblocks SIGCHLD */
-	    waitfg(pid);
-	}
     }
+    
+    /* Child process */
+    else if(pid==0){
+      
+      if(setpgid(0,0)<0) unix_error("setpgid error");
+        
+      if (execvp(argv[0], argv) < 0) {
+		    printf("%s: Command not found. \n", argv[0]);
+		    exit(0);
+	}
+     }
+
+    /* Parent process */	    
+    else{
+      if(bg==1){
+        addjob(jobs, pid, BG, cmdline);
+        printf("[&d] (%d) %s", pid2jid(pid), pid, cmdline);
+      }
+      else{
+        addjob(jobs, pid, FG, cmdline);
+       	sigprocmask(SIG_UNBLOCK, &mask, 0);
+        waitfg(pid);
+      }
+    }
+  }
+  
     return;
 }
 
@@ -350,7 +348,7 @@ void do_bgfg(char **argv)
     jid=atoi(&id[1]);
     dojob=getjobjid(jobs,jid);
     if(dojob==NULL){
-      printf("(%d): No such job\n",jid);
+      printf("%%d: No such job\n",jid);
       return;
     }
   }
