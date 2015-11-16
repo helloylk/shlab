@@ -391,8 +391,9 @@ void do_bgfg(char **argv)
       printf("Wrong command: The job is already in background\n");
       return;
     }
-    printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
+    printf("[%d] (%d) %s", dojob->jid, dojob->pid, dojob->cmdline);
     dojob->state=BG;
+    pid=dojob->pid;
     kill(-pid,SIGCONT);
   }
   
