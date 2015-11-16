@@ -308,6 +308,7 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
+  /* Chcek if it is built-in command */
   if(!strcmp(argv[0],"quit")){
     exit(0);
   }
@@ -330,7 +331,8 @@ int builtin_cmd(char **argv)
     return 1;
   }
   
-  return 0;     /* not a builtin command */
+  /* Else, command doesn't match builtin command */
+  return 0;     
 }
 
 /* 
@@ -343,14 +345,8 @@ void do_bgfg(char **argv)
   int pid;
   struct job_t *dojob;
   
-  /* Worng input */
-  if(id==NULL){
-    printf("%s command requires PID or %%jobid argument\n", argv[0]);
-    return ;
-  }
-  
   /* When input is JID */
-  else if (id[0]== '%'){
+  if (id[0]== '%'){
     jid=atoi(&id[1]);
     dojob=getjobjid(jobs,jid);
     if(dojob==NULL){
@@ -369,26 +365,34 @@ void do_bgfg(char **argv)
     }
   }
   
-  /* Wrong input2 */
+  /* ERROR - No argument */
+  else if(id==NULL){
+    printf("%s command requires PID or %%jobid argument\n", argv[0]);
+    return ;
+  }
+  
+  /* ERROR - Wrong input */
   else{
-    printf("argument must be a PID or %%jobid\n");
+    printf("%s: argument must be a PID or %%jobid argument\n", argv[0]);
     return;
   }
   
+  /* fg command */
   if(!strcmp(argv[0],"fg")){
     if(dojob->state==FG){
-      printf("Wrong command: The job is already in foreground\n");
+      printf("%s: The job is already in foreground\n", argv[0]);
       return ;
     }
     pid=dojob->pid;
-    if(dojob->state==ST) kill(-pid,SIGCONT);
+    if(dojob->state==ST) kill(-pid,SIGCONT); /* If it was stopped, continue */
     dojob->state=FG;
-    waitfg(dojob->pid);
+    waitfg(pid);
   }
   
+  /* bg command */
   if(!strcmp(argv[0], "bg")){
     if(dojob->state==BG){
-      printf("Wrong command: The job is already in background\n");
+      printf("%s: The job is already in background\n", argv[0]);
       return;
     }
     printf("[%d] (%d) %s", dojob->jid, dojob->pid, dojob->cmdline);
