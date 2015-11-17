@@ -454,6 +454,7 @@ void sigchld_handler(int sig)
 	}
     }
     
+    /* Error */
     if (pid < 0 && errno != ECHILD) {
 	printf("waitpid error: %s\n", strerror(errno));
     }
