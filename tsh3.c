@@ -439,24 +439,23 @@ void sigchld_handler(int sig)
   
     while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0 ) {
 	
-	if (WIFEXITED(status)) {   /*checks if child terminated normally */
-	    deletejob(jobs, pid);
-	}
-
-	if (WIFSIGNALED(status)) {  /*checks if child was terminated by a signal that was not caught */
-	    printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
+	/* If exited, delete job */
+	if (WIFEXITED(status)==1) deletejob(jobs, pid);
+	
+	if (WIFSIGNALED(status)==1) { 
+	    printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, -2);
 	    deletejob(jobs,pid);
 	}
-
-	if (WIFSTOPPED(status)) {     /*checks if child process that caused return is currently stopped */
+	
+	if (WIFSTOPPED(status)==1) {
 	    getjobpid(jobs, pid)->state = ST;
-	    printf("[%d] Stopped %s\n", pid2jid(pid), jobs->cmdline);
+	    printf("Job [%d] Stopped by signal %d", pid2jid(pid), jobs->cmdline, SIGTSTP);
 	}
     }
     
     /* Error */
     if (pid < 0 && errno != ECHILD) {
-	printf("waitpid error: %s\n", strerror(errno));
+	unix_error("waitpid error);
     }
     
     return;
