@@ -443,19 +443,19 @@ void sigchld_handler(int sig)
 	if (WIFEXITED(status)==1) deletejob(jobs, pid);
 	
 	if (WIFSIGNALED(status)==1) { 
-	    printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, -2);
+	    printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, 2);
 	    deletejob(jobs,pid);
 	}
 	
 	if (WIFSTOPPED(status)==1) {
 	    getjobpid(jobs, pid)->state = ST;
-	    printf("Job [%d] Stopped by signal %d", pid2jid(pid), jobs->cmdline, SIGTSTP);
+	    printf("Job [%d] (%d) Stopped by signal %d\n", pid2jid(pid), pid, SIGTSTP);
 	}
     }
     
     /* Error */
     if (pid < 0 && errno != ECHILD) {
-	unix_error("waitpid error);
+	unix_error("waitpid error");
     }
     
     return;
