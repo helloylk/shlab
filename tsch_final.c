@@ -357,7 +357,7 @@ void do_bgfg(char **argv)
             
         /* When input is jid */
 	if (id[0] == '%') {
-	    id = atoi(&id[1]);
+	    jid = atoi(&id[1]);
 	    do_job=getjobjid(jobs,jid);
 	    if (do_job==NULL) {
 		printf("%%%d: No such job\n", jid);
